@@ -165,11 +165,7 @@ public class IntermediateCodeGenFallVisitor implements ParserVisitor {
 
         if (varType == VarType.BOOL) {
             String next = (String) data;
-            Node inner = exprNode.jjtGetNumChildren() > 0 ? exprNode.jjtGetChild(0) : null;
-            BoolLabel bLabels = new BoolLabel(
-                (inner instanceof ASTTernary) ? newLabel() : FALL,
-                newLabel()
-            );
+            BoolLabel bLabels = new BoolLabel(FALL, newLabel());
             exprNode.jjtAccept(this, bLabels);
             if (!FALL.equals(bLabels.lTrue)) label(bLabels.lTrue);
             gen(identifier + " = 1");
@@ -197,6 +193,7 @@ public class IntermediateCodeGenFallVisitor implements ParserVisitor {
             Node elseExpr = node.jjtGetChild(2);
             String thenLabel = newLabel();
             String elseLabel = newLabel();
+            if (FALL.equals(bLabels.lTrue)) bLabels.lTrue = newLabel();
             BoolLabel condLabels = new BoolLabel(thenLabel, elseLabel);
             cond.jjtAccept(this, condLabels);
             label(thenLabel);
