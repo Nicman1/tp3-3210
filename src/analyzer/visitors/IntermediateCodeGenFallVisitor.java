@@ -63,9 +63,9 @@ public class IntermediateCodeGenFallVisitor implements ParserVisitor {
         String next = isInnerBlock ? (String) data : newLabel();
         String[] nextLabels = new String[n];
         nextLabels[n - 1] = next;
-        for (int i = 0; i < n - 1; i++) nextLabels[i] = newLabel();
 
         for (int i = 0; i < n; i++) {
+            if (i < n - 1) nextLabels[i] = newLabel();
             Node child = node.jjtGetChild(i);
             child.jjtAccept(this, nextLabels[i]);
             if (i < n - 1) label(nextLabels[i]);
@@ -172,7 +172,10 @@ public class IntermediateCodeGenFallVisitor implements ParserVisitor {
         if (varType == VarType.BOOL) {
             String next = (String) data;
             String lFalse = newLabel();
-            String lTrue = (exprNode instanceof ASTTernary) ? newLabel() : null;
+            Node innerExpr = exprNode;
+            while (innerExpr instanceof ASTExpr && innerExpr.jjtGetNumChildren() > 0)
+                innerExpr = innerExpr.jjtGetChild(0);
+            String lTrue = (innerExpr instanceof ASTTernary) ? newLabel() : null;
             BoolLabel bLabels = (lTrue != null) ? new BoolLabel(lTrue, lFalse) : new BoolLabel(FALL, lFalse);
             exprNode.jjtAccept(this, bLabels);
             if (lTrue != null) label(lTrue);
