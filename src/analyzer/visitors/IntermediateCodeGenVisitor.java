@@ -16,8 +16,6 @@ import java.util.Vector;
  * @version 2025.10.23
  */
 public class IntermediateCodeGenVisitor implements ParserVisitor {
-    public static final String FALL = "fall";
-
     private final PrintWriter m_writer;
 
     public HashMap<String, VarType> SymbolTable = new HashMap<>();
@@ -287,12 +285,12 @@ public class IntermediateCodeGenVisitor implements ParserVisitor {
         if (data instanceof BoolLabel) {
             BoolLabel bLabels = (BoolLabel) data;
             Vector<String> ops = node.getOps();
-            if (ops.size() > 0 && ops.get(0).equals("&&")) {
+            if (!ops.isEmpty() && ops.get(0).equals("&&")) {
                 BoolLabel b1 = new BoolLabel(newLabel(), bLabels.lFalse);
                 node.jjtGetChild(0).jjtAccept(this, b1);
                 label(b1.lTrue);
                 node.jjtGetChild(1).jjtAccept(this, bLabels);
-            } else if (ops.size() > 0 && ops.get(0).equals("||")) {
+            } else if (!ops.isEmpty() && ops.get(0).equals("||")) {
                 BoolLabel b1 = new BoolLabel(bLabels.lTrue, newLabel());
                 node.jjtGetChild(0).jjtAccept(this, b1);
                 label(b1.lFalse);
