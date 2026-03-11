@@ -27,10 +27,21 @@ public class IntermediateCodeGenFallVisitor implements ParserVisitor {
         m_writer = writer;
     }
 
-    private String newID() { return "_t" + id++; }
-    private String newLabel() { return "_L" + label++; }
-    private void gen(String s) { m_writer.println(s); }
-    private void label(String s) { m_writer.println(s); }
+    private String newID() {
+        return "_t" + id++;
+    }
+
+    private String newLabel() {
+        return "_L" + label++;
+    }
+
+    private void gen(String s) {
+        m_writer.println(s);
+    }
+
+    private void label(String s) {
+        m_writer.println(s);
+    }
 
     @Override
     public Object visit(SimpleNode node, Object data) {
@@ -251,14 +262,14 @@ public class IntermediateCodeGenFallVisitor implements ParserVisitor {
         if (data instanceof BoolLabel) {
             BoolLabel bLabels = (BoolLabel) data;
             Vector<String> ops = node.getOps();
-            if (ops.size() > 0 && ops.get(0).equals("&&")) {
+            if (!ops.isEmpty() && ops.get(0).equals("&&")) {
                 BoolLabel b1 = new BoolLabel(FALL, bLabels.lFalse.equals(FALL) ? newLabel() : bLabels.lFalse);
                 node.jjtGetChild(0).jjtAccept(this, b1);
                 node.jjtGetChild(1).jjtAccept(this, bLabels);
                 if (bLabels.lFalse.equals(FALL)) {
                     label(b1.lFalse);
                 }
-            } else if (ops.size() > 0 && ops.get(0).equals("||")) {
+            } else if (!ops.isEmpty() && ops.get(0).equals("||")) {
                 String b1True = bLabels.lTrue.equals(FALL) ? newLabel() : bLabels.lTrue;
                 BoolLabel b1 = new BoolLabel(b1True, FALL);
                 node.jjtGetChild(0).jjtAccept(this, b1);
@@ -286,9 +297,9 @@ public class IntermediateCodeGenFallVisitor implements ParserVisitor {
                 if (!FALL.equals(bLabels.lTrue) && !FALL.equals(bLabels.lFalse)) {
                     gen("if " + e1 + " " + op + " " + e2 + " goto " + bLabels.lTrue);
                     gen("goto " + bLabels.lFalse);
-                } else if (!FALL.equals(bLabels.lTrue) && FALL.equals(bLabels.lFalse)) {
+                } else if (!FALL.equals(bLabels.lTrue)) {
                     gen("if " + e1 + " " + op + " " + e2 + " goto " + bLabels.lTrue);
-                } else if (FALL.equals(bLabels.lTrue) && !FALL.equals(bLabels.lFalse)) {
+                } else if (!FALL.equals(bLabels.lFalse)) {
                     gen("ifFalse " + e1 + " " + op + " " + e2 + " goto " + bLabels.lFalse);
                 }
             } else {
@@ -334,9 +345,9 @@ public class IntermediateCodeGenFallVisitor implements ParserVisitor {
             if (!FALL.equals(bLabels.lTrue) && !FALL.equals(bLabels.lFalse)) {
                 gen("if " + id + " == 1 goto " + bLabels.lTrue);
                 gen("goto " + bLabels.lFalse);
-            } else if (!FALL.equals(bLabels.lTrue) && FALL.equals(bLabels.lFalse)) {
+            } else if (!FALL.equals(bLabels.lTrue)) {
                 gen("if " + id + " == 1 goto " + bLabels.lTrue);
-            } else if (FALL.equals(bLabels.lTrue) && !FALL.equals(bLabels.lFalse)) {
+            } else if (!FALL.equals(bLabels.lFalse)) {
                 gen("ifFalse " + id + " == 1 goto " + bLabels.lFalse);
             }
         } else {
@@ -350,15 +361,17 @@ public class IntermediateCodeGenFallVisitor implements ParserVisitor {
         return Integer.toString(node.getValue());
     }
 
-    public enum VarType { BOOL, INT }
+    public enum VarType {BOOL, INT}
 
     public static class BoolLabel {
         public String lTrue;
         public String lFalse;
+
         public BoolLabel(String lTrue, String lFalse) {
             this.lTrue = lTrue;
             this.lFalse = lFalse;
         }
+
         public BoolLabel swapped() {
             return new BoolLabel(lFalse, lTrue);
         }
