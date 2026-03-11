@@ -172,13 +172,9 @@ public class IntermediateCodeGenFallVisitor implements ParserVisitor {
         if (varType == VarType.BOOL) {
             String next = (String) data;
             String lFalse = newLabel();
-            Node innerExpr = exprNode;
-            while (innerExpr instanceof ASTExpr && innerExpr.jjtGetNumChildren() > 0)
-                innerExpr = innerExpr.jjtGetChild(0);
-            String lTrue = (innerExpr instanceof ASTTernary) ? newLabel() : null;
-            BoolLabel bLabels = (lTrue != null) ? new BoolLabel(lTrue, lFalse) : new BoolLabel(FALL, lFalse);
-            exprNode.jjtAccept(this, bLabels);
-            if (lTrue != null) label(lTrue);
+            BoolLabel bLabels = new BoolLabel(FALL, lFalse);
+            String trueTarget = (String) exprNode.jjtAccept(this, bLabels);
+            if (trueTarget != null) label(trueTarget);
             gen(identifier + " = 1");
             gen("goto " + next);
             label(lFalse);
@@ -204,12 +200,14 @@ public class IntermediateCodeGenFallVisitor implements ParserVisitor {
             Node elseExpr = node.jjtGetChild(2);
             String thenLabel = newLabel();
             String elseLabel = newLabel();
+            String trueTarget = newLabel();
             BoolLabel condLabels = new BoolLabel(thenLabel, elseLabel);
             cond.jjtAccept(this, condLabels);
             label(thenLabel);
-            thenExpr.jjtAccept(this, bLabels);
+            thenExpr.jjtAccept(this, new BoolLabel(trueTarget, bLabels.lFalse));
             label(elseLabel);
-            elseExpr.jjtAccept(this, bLabels);
+            elseExpr.jjtAccept(this, new BoolLabel(trueTarget, bLabels.lFalse));
+            return trueTarget;
         } else {
             Node cond = node.jjtGetChild(0);
             Node thenExpr = node.jjtGetChild(1);
@@ -228,7 +226,6 @@ public class IntermediateCodeGenFallVisitor implements ParserVisitor {
             label(joinLabel);
             return tmp;
         }
-        return null;
     }
 
     private Object codeExtAddMul(SimpleNode node, Object data, Vector<String> ops) {
