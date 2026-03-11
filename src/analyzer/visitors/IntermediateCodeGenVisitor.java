@@ -66,14 +66,13 @@ public class IntermediateCodeGenVisitor implements ParserVisitor {
         String next = isInnerBlock ? (String) data : newLabel();
         String[] nextLabels = new String[n];
         nextLabels[n - 1] = next;
-        for (int i = 0; i < n - 1; i++) {
-            nextLabels[i] = newLabel();
-        }
 
         for (int i = 0; i < n; i++) {
+            if (i < n - 1) {
+                nextLabels[i] = newLabel();
+            }
             Node child = node.jjtGetChild(i);
-            Object stmtData = nextLabels[i];
-            child.jjtAccept(this, stmtData);
+            child.jjtAccept(this, nextLabels[i]);
             if (i < n - 1) {
                 label(nextLabels[i]);
             }
@@ -162,15 +161,18 @@ public class IntermediateCodeGenVisitor implements ParserVisitor {
         SymbolTable.put(identifier, varType);
 
         if (node.jjtGetNumChildren() > 1 && node.jjtGetChild(1) != null) {
-            String next = data instanceof String ? (String) data : newLabel();
             if (varType == VarType.BOOL) {
-                BoolLabel bLabels = new BoolLabel(newLabel(), newLabel());
+                String lTrue = newLabel();
+                String lFalse = newLabel();
+                String next = data instanceof String ? (String) data : newLabel();
+                BoolLabel bLabels = new BoolLabel(lTrue, lFalse);
                 node.jjtGetChild(1).jjtAccept(this, bLabels);
-                label(bLabels.lTrue);
+                label(lTrue);
                 gen(identifier + " = 1");
                 gen("goto " + next);
-                label(bLabels.lFalse);
+                label(lFalse);
                 gen(identifier + " = 0");
+                if (!(data instanceof String)) label(next);
             } else {
                 Object addr = node.jjtGetChild(1).jjtAccept(this, null);
                 if (addr != null) gen(identifier + " = " + addr);
@@ -188,13 +190,15 @@ public class IntermediateCodeGenVisitor implements ParserVisitor {
         VarType varType = SymbolTable.get(identifier);
 
         if (varType == VarType.BOOL) {
+            String lTrue = newLabel();
+            String lFalse = newLabel();
             String next = (String) data;
-            BoolLabel bLabels = new BoolLabel(newLabel(), newLabel());
+            BoolLabel bLabels = new BoolLabel(lTrue, lFalse);
             exprNode.jjtAccept(this, bLabels);
-            label(bLabels.lTrue);
+            label(lTrue);
             gen(identifier + " = 1");
             gen("goto " + next);
-            label(bLabels.lFalse);
+            label(lFalse);
             gen(identifier + " = 0");
         } else {
             Object addr = exprNode.jjtAccept(this, null);

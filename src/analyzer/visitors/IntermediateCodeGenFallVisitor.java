@@ -135,17 +135,12 @@ public class IntermediateCodeGenFallVisitor implements ParserVisitor {
         if (node.jjtGetNumChildren() > 1 && node.jjtGetChild(1) != null) {
             String next = data instanceof String ? (String) data : newLabel();
             if (varType == VarType.BOOL) {
-                Node exprChild = node.jjtGetChild(1);
-                Node innerExpr = exprChild.jjtGetNumChildren() > 0 ? exprChild.jjtGetChild(0) : null;
-                BoolLabel bLabels = new BoolLabel(
-                    (innerExpr != null && innerExpr instanceof ASTTernary) ? newLabel() : FALL,
-                    newLabel()
-                );
-                exprChild.jjtAccept(this, bLabels);
-                if (!FALL.equals(bLabels.lTrue)) label(bLabels.lTrue);
+                String lFalse = newLabel();
+                BoolLabel bLabels = new BoolLabel(FALL, lFalse);
+                node.jjtGetChild(1).jjtAccept(this, bLabels);
                 gen(identifier + " = 1");
                 gen("goto " + next);
-                label(bLabels.lFalse);
+                label(lFalse);
                 gen(identifier + " = 0");
             } else {
                 Object addr = node.jjtGetChild(1).jjtAccept(this, null);
@@ -165,12 +160,14 @@ public class IntermediateCodeGenFallVisitor implements ParserVisitor {
 
         if (varType == VarType.BOOL) {
             String next = (String) data;
-            BoolLabel bLabels = new BoolLabel(FALL, newLabel());
+            String lFalse = newLabel();
+            String lTrue = (exprNode instanceof ASTTernary) ? newLabel() : null;
+            BoolLabel bLabels = (lTrue != null) ? new BoolLabel(lTrue, lFalse) : new BoolLabel(FALL, lFalse);
             exprNode.jjtAccept(this, bLabels);
-            if (!FALL.equals(bLabels.lTrue)) label(bLabels.lTrue);
+            if (lTrue != null) label(lTrue);
             gen(identifier + " = 1");
             gen("goto " + next);
-            label(bLabels.lFalse);
+            label(lFalse);
             gen(identifier + " = 0");
         } else {
             Object addr = exprNode.jjtAccept(this, null);
@@ -193,7 +190,6 @@ public class IntermediateCodeGenFallVisitor implements ParserVisitor {
             Node elseExpr = node.jjtGetChild(2);
             String thenLabel = newLabel();
             String elseLabel = newLabel();
-            if (FALL.equals(bLabels.lTrue)) bLabels.lTrue = newLabel();
             BoolLabel condLabels = new BoolLabel(thenLabel, elseLabel);
             cond.jjtAccept(this, condLabels);
             label(thenLabel);
@@ -258,21 +254,17 @@ public class IntermediateCodeGenFallVisitor implements ParserVisitor {
             if (ops.size() > 0 && ops.get(0).equals("&&")) {
                 BoolLabel b1 = new BoolLabel(FALL, bLabels.lFalse.equals(FALL) ? newLabel() : bLabels.lFalse);
                 node.jjtGetChild(0).jjtAccept(this, b1);
+                node.jjtGetChild(1).jjtAccept(this, bLabels);
                 if (bLabels.lFalse.equals(FALL)) {
-                    node.jjtGetChild(1).jjtAccept(this, bLabels);
                     label(b1.lFalse);
-                } else {
-                    node.jjtGetChild(1).jjtAccept(this, bLabels);
                 }
             } else if (ops.size() > 0 && ops.get(0).equals("||")) {
                 String b1True = bLabels.lTrue.equals(FALL) ? newLabel() : bLabels.lTrue;
                 BoolLabel b1 = new BoolLabel(b1True, FALL);
                 node.jjtGetChild(0).jjtAccept(this, b1);
+                node.jjtGetChild(1).jjtAccept(this, bLabels);
                 if (bLabels.lTrue.equals(FALL)) {
-                    node.jjtGetChild(1).jjtAccept(this, bLabels);
                     label(b1True);
-                } else {
-                    node.jjtGetChild(1).jjtAccept(this, bLabels);
                 }
             } else {
                 node.jjtGetChild(0).jjtAccept(this, bLabels);
