@@ -1,0 +1,4 @@
+int a;
+
+while(true)
+  a = 42;

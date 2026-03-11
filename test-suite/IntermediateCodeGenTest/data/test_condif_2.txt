@@ -1,0 +1,11 @@
+int a;
+bool b;
+bool c;
+
+if(b) {
+  if(c) {
+    a = 42;
+  }
+}
+
+  

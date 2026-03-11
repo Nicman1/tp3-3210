@@ -1,0 +1,13 @@
+int a;
+bool b;
+int c;
+
+if(false) {
+  a = 42;
+  c = 1 + 2;
+}
+else {
+  a = 3210;
+  c = a * 4;
+}
+

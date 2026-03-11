@@ -1,0 +1,12 @@
+int a;
+bool b;
+bool c;
+
+if(1 > a) {
+  a = 123;
+}
+else {
+  a = 789;
+  c = false;
+}
+  

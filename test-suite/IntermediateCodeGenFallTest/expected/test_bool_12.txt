@@ -1,0 +1,17 @@
+a = 0
+_L1
+b = 0
+_L2
+c = 0
+_L3
+d = 0
+_L4
+ifFalse b == 1 goto _L5
+if c == 1 goto _L6
+ifFalse d == 1 goto _L5
+_L6
+a = 1
+goto _L0
+_L5
+a = 0
+_L0

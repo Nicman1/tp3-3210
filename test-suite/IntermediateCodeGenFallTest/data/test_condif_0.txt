@@ -1,0 +1,4 @@
+int a;
+
+if(true)
+  a = 42;

@@ -1,0 +1,10 @@
+  Program
+   Block
+    DeclareStmt
+     Identifier
+     Expr
+      MultExpr
+       GenValue
+        IntValue
+       GenValue
+        IntValue

@@ -1,0 +1,6 @@
+bool a;
+bool b;
+bool c;
+bool d;
+
+a = b && c || d;

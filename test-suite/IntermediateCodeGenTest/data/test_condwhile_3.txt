@@ -1,0 +1,11 @@
+int a;
+int b;
+bool c;
+int d;
+
+a = d;
+while(!c) {
+  a = a + 42;
+  b = 1 / 3 + 5;
+}
+b = a;    

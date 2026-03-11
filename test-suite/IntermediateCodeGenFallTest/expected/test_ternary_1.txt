@@ -1,0 +1,12 @@
+a = 0
+_L1
+b = 0
+_L2
+ifFalse b == 1 goto _L3
+_t0 = 1
+goto _L4
+_L3
+_t0 = 2
+_L4
+a = _t0
+_L0

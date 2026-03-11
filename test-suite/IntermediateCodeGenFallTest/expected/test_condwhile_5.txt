@@ -1,0 +1,21 @@
+a = 0
+_L1
+b = 0
+_L2
+c = 0
+_L3
+d = 0
+_L4
+d = 1
+_L5
+_L6
+ifFalse b == 1 goto _L0
+_t0 = d + 1
+d = _t0
+_L7
+_L8
+ifFalse c == 1 goto _L6
+a = 42
+goto _L8
+goto _L6
+_L0

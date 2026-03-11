@@ -1,0 +1,13 @@
+  Program
+   Block
+    DeclareStmt
+     Identifier
+    WhileStmt
+     Expr
+      GenValue
+       BoolValue
+     AssignStmt
+      Identifier
+      Expr
+       GenValue
+        IntValue

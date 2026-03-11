@@ -1,0 +1,2 @@
+bool a = false || false;
+bool b = false || true;

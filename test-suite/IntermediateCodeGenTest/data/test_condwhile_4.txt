@@ -1,0 +1,10 @@
+int a;
+bool b;
+bool c;
+
+while(b) {
+  while(c && true) {
+    a = 42;
+  }
+}
+  

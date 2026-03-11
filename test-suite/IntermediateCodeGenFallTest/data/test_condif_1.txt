@@ -1,0 +1,9 @@
+int a;
+
+if(false) {
+  a = 42;
+}
+else {
+  a = 3210;
+}
+

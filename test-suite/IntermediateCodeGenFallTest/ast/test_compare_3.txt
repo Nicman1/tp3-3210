@@ -1,0 +1,17 @@
+  Program
+   Block
+    DeclareStmt
+     Identifier
+    DeclareStmt
+     Identifier
+    DeclareStmt
+     Identifier
+    AssignStmt
+     Identifier
+     Expr
+      CompExpr
+       GenValue
+        Identifier
+       NegExpr
+        GenValue
+         Identifier

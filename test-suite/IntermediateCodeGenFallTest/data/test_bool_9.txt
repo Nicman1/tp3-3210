@@ -1,0 +1,6 @@
+bool a;
+bool b;
+
+a = !true;
+a = !false;
+a = !b;
