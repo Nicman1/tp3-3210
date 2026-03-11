@@ -16,31 +16,97 @@ import java.util.Vector;
  * @version 2025.10.23
  */
 public class IntermediateCodeGenVisitor implements ParserVisitor {
-    private final PrintWriter m_writer;
+    public static final String FALL = "fall";
+
+    protected final PrintWriter m_writer;
 
     public HashMap<String, VarType> SymbolTable = new HashMap<>();
 
-    private int id = 0;
-    private int label = 0;
+    protected int id = 0;
+    protected int label = 0;
 
     public IntermediateCodeGenVisitor(PrintWriter writer) {
         m_writer = writer;
     }
 
-    private String newID() {
+    protected String newID() {
         return "_t" + id++;
     }
 
-    private String newLabel() {
+    protected String newLabel() {
         return "_L" + label++;
     }
 
-    private void gen(String s) {
+    protected void gen(String s) {
         m_writer.println(s);
     }
 
-    private void label(String s) {
+    protected void label(String s) {
         m_writer.println(s);
+    }
+
+    protected static final class ForParts {
+        final Node init;
+        final Node cond;
+        final Node update;
+        final Node body;
+
+        ForParts(Node init, Node cond, Node update, Node body) {
+            this.init = init;
+            this.cond = cond;
+            this.update = update;
+            this.body = body;
+        }
+    }
+
+    protected ForParts splitForParts(ASTForStmt node) {
+        Node initNode = null, condNode = null, updateNode = null, bodyNode = null;
+        for (int i = 0; i < node.jjtGetNumChildren(); i++) {
+            Node c = node.jjtGetChild(i);
+            if (c instanceof ASTDeclareStmt) initNode = c;
+            else if (c instanceof ASTExpr) condNode = c;
+            else if (c instanceof ASTAssignStmt && updateNode == null) updateNode = c;
+            else bodyNode = c;
+        }
+        return new ForParts(initNode, condNode, updateNode, bodyNode);
+    }
+
+    protected Object genTernaryValue(ASTTernary node) {
+        Node cond = node.jjtGetChild(0);
+        Node thenExpr = node.jjtGetChild(1);
+        Node elseExpr = node.jjtGetChild(2);
+        String tmp = newID();
+        String thenLabel = newLabel();
+        String elseLabel = newLabel();
+        String joinLabel = newLabel();
+        BoolLabel bLabels = new BoolLabel(thenLabel, elseLabel);
+        cond.jjtAccept(this, bLabels);
+        label(thenLabel);
+        emitTernaryValueAssignments(tmp, thenExpr, elseExpr, elseLabel, joinLabel);
+        return tmp;
+    }
+
+    protected void emitTernaryValueAssignments(String tmp, Node thenExpr, Node elseExpr, String elseLabel, String joinLabel) {
+        Object thenAddr = thenExpr.jjtAccept(this, null);
+        gen(tmp + " = " + thenAddr);
+        gen("goto " + joinLabel);
+        label(elseLabel);
+        Object elseAddr = elseExpr.jjtAccept(this, null);
+        gen(tmp + " = " + elseAddr);
+        label(joinLabel);
+    }
+
+    protected Object genTernaryValueFall(ASTTernary node) {
+        Node cond = node.jjtGetChild(0);
+        Node thenExpr = node.jjtGetChild(1);
+        Node elseExpr = node.jjtGetChild(2);
+        String tmp = newID();
+        String elseLabel = newLabel();
+        String joinLabel = newLabel();
+        BoolLabel bLabels = new BoolLabel(FALL, elseLabel);
+        cond.jjtAccept(this, bLabels);
+        emitTernaryValueAssignments(tmp, thenExpr, elseExpr, elseLabel, joinLabel);
+        return tmp;
     }
 
     @Override
@@ -126,28 +192,21 @@ public class IntermediateCodeGenVisitor implements ParserVisitor {
     @Override
     public Object visit(ASTForStmt node, Object data) {
         String sNext = (String) data;
-        Node initNode = null, condNode = null, updateNode = null, bodyNode = null;
-        for (int i = 0; i < node.jjtGetNumChildren(); i++) {
-            Node c = node.jjtGetChild(i);
-            if (c instanceof ASTDeclareStmt) initNode = c;
-            else if (c instanceof ASTExpr) condNode = c;
-            else if (c instanceof ASTAssignStmt && updateNode == null) updateNode = c;
-            else bodyNode = c;
-        }
+        ForParts parts = splitForParts(node);
 
         String begin = newLabel();
         String bodyNext = newLabel();
         String bodyLabel = newLabel();
-        if (initNode != null) initNode.jjtAccept(this, null);
+        if (parts.init != null) parts.init.jjtAccept(this, null);
         label(begin);
-        if (condNode != null) {
+        if (parts.cond != null) {
             BoolLabel bLabels = new BoolLabel(bodyLabel, sNext);
-            condNode.jjtAccept(this, bLabels);
+            parts.cond.jjtAccept(this, bLabels);
             label(bodyLabel);
         }
-        if (bodyNode != null) bodyNode.jjtAccept(this, bodyNext);
+        if (parts.body != null) parts.body.jjtAccept(this, bodyNext);
         label(bodyNext);
-        if (updateNode != null) updateNode.jjtAccept(this, null);
+        if (parts.update != null) parts.update.jjtAccept(this, null);
         gen("goto " + begin);
         return null;
     }
@@ -228,24 +287,7 @@ public class IntermediateCodeGenVisitor implements ParserVisitor {
             label(elseLabel);
             elseExpr.jjtAccept(this, bLabels);
         } else {
-            Node cond = node.jjtGetChild(0);
-            Node thenExpr = node.jjtGetChild(1);
-            Node elseExpr = node.jjtGetChild(2);
-            String tmp = newID();
-            String thenLabel = newLabel();
-            String elseLabel = newLabel();
-            String joinLabel = newLabel();
-            BoolLabel bLabels = new BoolLabel(thenLabel, elseLabel);
-            cond.jjtAccept(this, bLabels);
-            label(thenLabel);
-            Object thenAddr = thenExpr.jjtAccept(this, null);
-            gen(tmp + " = " + thenAddr);
-            gen("goto " + joinLabel);
-            label(elseLabel);
-            Object elseAddr = elseExpr.jjtAccept(this, null);
-            gen(tmp + " = " + elseAddr);
-            label(joinLabel);
-            return tmp;
+            return genTernaryValue(node);
         }
         return null;
     }
