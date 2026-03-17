@@ -92,6 +92,7 @@ public class IntermediateCodeGenFallVisitor extends IntermediateCodeGenVisitor {
                 gen("goto " + next);
                 label(lFalse);
                 gen(identifier + " = 0");
+                if (!(data instanceof String)) label(next);
             } else {
                 Object addr = node.jjtGetChild(1).jjtAccept(this, null);
                 if (addr != null) gen(identifier + " = " + addr);
@@ -197,14 +198,6 @@ public class IntermediateCodeGenFallVisitor extends IntermediateCodeGenVisitor {
             }
         } else {
             return node.jjtGetChild(0).jjtAccept(this, data);
-        }
-        return null;
-    }
-
-    @Override
-    public Object visit(ASTNotExpr node, Object data) {
-        if (data instanceof BoolLabel) {
-            node.jjtGetChild(0).jjtAccept(this, ((BoolLabel) data).swapped());
         }
         return null;
     }
